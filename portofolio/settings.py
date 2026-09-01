@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-m$6^bw5-@twt_dzj&qhcm!%b%*mfz2nerq-yhv(hvwr5q-avqi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "<url-della-permata51-myportofolio-.pws.cs.ui.ac.id>"]
-
+ALLOWED_HOSTS = ['della-permata51-myportofolio.pws.cs.ui.ac.id', 'localhost', '127.0.0.1']
 
 # Application definition
 
