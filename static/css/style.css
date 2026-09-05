@@ -6,10 +6,10 @@
 
 :root {
     --ink: #1c1917;
-    --paper: #a6d8f0;
-    --accent: #af5182;
-    --accent-dark: #f5c3fb;
-    --line: #0c3356;
+    --paper: #C6E7FF;
+    --accent: #FFDDAE;
+    --accent-dark: #3674B5;
+    --line: #FFDDAE;
     --text-muted: #444f58;
     --radius: 4px;
 }
