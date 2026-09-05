@@ -197,14 +197,14 @@ h1, .brand {
 .experience {
     padding: 4rem 0 5rem;
     border-top: 1px solid var(--line);
-    background-color: #f3ede3;
+    background-color: #E2E2B6;
 }
 
 .section-kicker {
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent-dark);
+    color: var(--text-muted);
     font-weight: 700;
     margin-bottom: 0.5rem;
 }
@@ -213,6 +213,7 @@ h1, .brand {
     font-family: "Space Grotesk", -apple-system, sans-serif;
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     margin-bottom: 2.5rem;
+    color: #03346E
 }
  
 .timeline {
