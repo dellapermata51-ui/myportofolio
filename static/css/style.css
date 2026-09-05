@@ -204,7 +204,7 @@ h1, .brand {
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--line);
     font-weight: 700;
     margin-bottom: 0.5rem;
 }
@@ -244,8 +244,8 @@ h1, .brand {
     width: 0.9rem;
     height: 0.9rem;
     border-radius: 50%;
-    background-color: var(--paper);
-    border: 3px solid var(--accent);
+    background-color: var(--accent);
+    border: 3px solid var(--parper);
     transform: translateX(-0.05rem);
     transition: background-color 0.2s ease, transform 0.2s ease;
 }
@@ -261,11 +261,11 @@ h1, .brand {
 .timeline-item:hover .timeline-card {
     transform: translateX(6px);
     box-shadow: 0 8px 20px rgba(28, 25, 23, 0.08);
-    border-color: var(--accent);
+    border-color: var(--line);
 }
 
 .timeline-item:hover .timeline-marker {
-    background-color: var(--accent);
+    background-color: var(--paper);
     transform: translateX(-0.05rem) scale(1.15);
 }
  
