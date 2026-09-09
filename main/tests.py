@@ -8,8 +8,8 @@ from main.models import Experience
 class MainTest(TestCase):
     def setUp(self):
         self.experience = Experience.objects.create(
-            title="Asisten Dosen PBP",
-            description="Membantu mahasiswa memahami pengembangan web.",
+            title="Staff BEM Pengabdian Masyarakat Fasilkom UI",
+            description="Turning ideas into meaningful community initiatives through collaboration, planning, and hands-on execution.",
             category="part-time",
         )
 
@@ -27,7 +27,7 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_experience_model(self):
-        self.assertEqual(str(self.experience), "Asisten Dosen PBP")
+        self.assertEqual(str(self.experience), "Staff BEM Pengabdian Masyarakat Fasilkom UI 2026")
         self.assertEqual(self.experience.category, "part-time")
         self.assertTrue(self.experience.is_ongoing)
 
