@@ -343,7 +343,7 @@ h1, .brand {
 
 .experience-description,
 .empty-state {
-    color: var(--text-muted);
+    color: var(--line);
 }
 
 .experience-status {
