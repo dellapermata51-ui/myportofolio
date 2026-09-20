@@ -98,3 +98,68 @@ def delete_project(request, project_id):
         return redirect("main:show_projects")
 
     return redirect("main:show_projects")
+
+def get_education_json(request):
+    education_list = Education.objects.all().order_by("-started_at")
+    education_json = serializers.serialize("json", education_list)
+    return HttpResponse(education_json, content_type="application/json")
+ 
+ 
+def show_education(request):
+    json_response = get_education_json(request)
+ 
+    deserialized_objects = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    education_list = [item.object for item in deserialized_objects]
+ 
+    context = {
+        "name": PORTFOLIO_OWNER_NAME,
+        "education_list": education_list,
+    }
+    return render(request, "education.html", context)
+ 
+ 
+def create_education(request):
+    form = EducationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Riwayat pendidikan berhasil ditambahkan!")
+        return redirect("main:show_education")
+ 
+    context = {
+        "name": PORTFOLIO_OWNER_NAME,
+        "form": form,
+        "is_edit": False,
+    }
+    return render(request, "education_form.html", context)
+ 
+ 
+def update_education(request, education_id):
+    education = get_object_or_404(Education, pk=education_id)
+    form = EducationForm(request.POST or None, instance=education)
+ 
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Riwayat pendidikan berhasil diperbarui!")
+        return redirect("main:show_education")
+ 
+    context = {
+        "name": PORTFOLIO_OWNER_NAME,
+        "form": form,
+        "is_edit": True,
+        "education": education,
+    }
+    return render(request, "education_form.html", context)
+ 
+ 
+def delete_education(request, education_id):
+    education = get_object_or_404(Education, pk=education_id)
+ 
+    if request.method == "POST":
+        education.delete()
+        messages.success(request, "Riwayat pendidikan berhasil dihapus!")
+        return redirect("main:show_education")
+ 
+    return redirect("main:show_education")
