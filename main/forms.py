@@ -1,6 +1,8 @@
-from django.forms import ModelForm, TextInput, Textarea, URLInput
+from django import forms
+from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateTimeInput
 
-from main.models import Project
+from main.models import Project, Education
+
 
 class ProjectForm(ModelForm):
     class Meta:
@@ -47,6 +49,64 @@ class ProjectForm(ModelForm):
             "project_image_url": URLInput(
                 attrs={
                     "placeholder": "https://drive.google.com/thumbnail?id=...&sz=w1000",
+                }
+            ),
+        }
+
+
+class EducationForm(ModelForm):
+    ended_at = forms.DateTimeField(
+        label="Tanggal Selesai",
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+        help_text="Kosongkan jika pendidikan ini masih berlangsung.",
+    )
+
+    class Meta:
+        model = Education
+        fields = [
+            "institution",
+            "program",
+            "level",
+            "description",
+            "thumbnail",
+            "ended_at",
+        ]
+
+        labels = {
+            "institution": "Institusi",
+            "program": "Program Studi",
+            "level": "Jenjang",
+            "description": "Deskripsi",
+            "thumbnail": "URL Gambar/Logo",
+        }
+
+        widgets = {
+            "institution": TextInput(
+                attrs={
+                    "placeholder": "Universitas Indonesia",
+                    "maxlength": 255,
+                }
+            ),
+            "program": TextInput(
+                attrs={
+                    "placeholder": "Sistem Informasi",
+                }
+            ),
+            "level": Select(),
+            "description": Textarea(
+                attrs={
+                    "placeholder": "Ceritakan pengalaman pendidikanmu",
+                    "rows": 3,
+                }
+            ),
+            "thumbnail": URLInput(
+                attrs={
+                    "placeholder": "https://.../logo-institusi.png",
                 }
             ),
         }
