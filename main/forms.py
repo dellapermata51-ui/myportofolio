@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateTimeInput
 
-from main.models import Project, Education
+from main.models import Project, Education, Skill
 
 
 class ProjectForm(ModelForm):
@@ -55,6 +55,16 @@ class ProjectForm(ModelForm):
 
 
 class EducationForm(ModelForm):
+    started_at = forms.DateTimeField(
+        label="Tanggal Mulai",
+        required=True,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+
     ended_at = forms.DateTimeField(
         label="Tanggal Selesai",
         required=False,
@@ -74,6 +84,7 @@ class EducationForm(ModelForm):
             "level",
             "description",
             "thumbnail",
+            "started_at",
             "ended_at",
         ]
 
@@ -107,6 +118,40 @@ class EducationForm(ModelForm):
             "thumbnail": URLInput(
                 attrs={
                     "placeholder": "https://.../logo-institusi.png",
+                }
+            ),
+        }
+
+
+class SkillForm(ModelForm):
+    class Meta:
+        model = Skill
+        fields = [
+            "name",
+            "category",
+            "level",
+            "icon",
+        ]
+
+        labels = {
+            "name": "Nama Skill",
+            "category": "Kategori",
+            "level": "Level",
+            "icon": "URL Ikon",
+        }
+
+        widgets = {
+            "name": TextInput(
+                attrs={
+                    "placeholder": "Django",
+                    "maxlength": 100,
+                }
+            ),
+            "category": Select(),
+            "level": Select(),
+            "icon": URLInput(
+                attrs={
+                    "placeholder": "https://.../django-icon.png",
                 }
             ),
         }
