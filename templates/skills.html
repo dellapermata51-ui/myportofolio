@@ -1,26 +1,70 @@
-
-    {% extends 'base.html' %}
-    {% block content %}
+{% extends 'base.html' %}
+{% block meta %}
+    <title>Skills - {{ name }}</title>
+{% endblock meta %}
+{% block content %}
 
     <main>
-        <section class="page-section" id="skills">
+        <section class="experience-section" id="skills">
             <div class="container">
-                <p class="section-kicker" style="text-align:left;">Apa yang saya kuasai</p>
-                <h1 class="section-title">Skills</h1>
+                <p class="section-kicker">Apa yang saya kuasai</p>
+                <div class="project-header">
+                    <h1>Skills</h1>
+                    <a href="{% url 'main:create_skill' %}" class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Skill
+                    </a>
+                </div>
 
-                <div class="gallery-grid">
+                <div class="experience-grid project-grid">
                     {% for skill in skill_list %}
-                        <article class="gallery-card">
-                            <div class="gallery-thumb" {% if skill.icon %}style="background-image: url('{{ skill.icon }}');"{% endif %}>
-                                {% if not skill.icon %}
-                                    <span class="gallery-thumb-placeholder">{{ skill.name|slice:":1" }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="gallery-accent-bar accent-{{ skill.accent }}"></div>
-                            <div class="gallery-caption">
-                                <p class="gallery-category text-{{ skill.accent }}">{{ skill.get_category_display }}</p>
-                                <h3>{{ skill.name }}</h3>
-                                <p class="gallery-status text-{{ skill.accent }}">{{ skill.get_level_display }}</p>
+                        <article class="experience-card">
+                            <h2>{{ skill.name }}</h2>
+                            <span class="experience-category">{{ skill.get_category_display }}</span>
+                            <p class="experience-description">{{ skill.get_level_display }}</p>
+
+                            <div class="project-card-actions">
+                                <div class="project-actions">
+                                    <a href="{% url 'main:update_skill' skill.id %}" class="button">Edit</a>
+                                    <button type="button"
+                                            popovertarget="delete-skill-modal-{{ skill.id }}"
+                                            class="button button-danger">
+                                        Hapus
+                                    </button>
+
+                                    <div id="delete-skill-modal-{{ skill.id }}"
+                                         popover
+                                         class="project-delete-modal">
+                                        <button type="button"
+                                                popovertarget="delete-skill-modal-{{ skill.id }}"
+                                                popovertargetaction="hide"
+                                                class="project-delete-modal__backdrop"
+                                                aria-label="Tutup"></button>
+                                        <div class="project-delete-modal__content">
+                                            <button type="button"
+                                                    popovertarget="delete-skill-modal-{{ skill.id }}"
+                                                    popovertargetaction="hide"
+                                                    class="project-delete-modal__close"
+                                                    aria-label="Tutup">&times;</button>
+                                            <h2>Hapus Skill?</h2>
+                                            <p>
+                                                Yakin ingin menghapus skill "{{ skill.name }}"?
+                                                Tindakan ini tidak dapat dibatalkan.
+                                            </p>
+                                            <div class="project-delete-modal__actions">
+                                                <button type="button"
+                                                        popovertarget="delete-skill-modal-{{ skill.id }}"
+                                                        popovertargetaction="hide"
+                                                        class="button button-secondary">Batal</button>
+                                                <form method="post"
+                                                      action="{% url 'main:delete_skill' skill.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="button button-danger">Hapus</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </article>
                     {% empty %}
