@@ -739,3 +739,47 @@ h1, h2, h3, .brand, .hero-title {
         text-align: center;
     }
 }
+
+.experience-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.75rem;
+}
+
+.experience-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.experience-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.experience-card .project-image {
+    margin-bottom: 0.5rem;
+}
+
+.experience-card h2 {
+    font-size: 1.2rem;
+}
+
+.experience-category {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.experience-description {
+    font-size: 0.925rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}

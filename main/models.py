@@ -45,7 +45,7 @@ class Education(models.Model):
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='s1')
     description = models.TextField(blank=True, default="")
     thumbnail = models.URLField(blank=True, null=True)
-    started_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField()
     ended_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
@@ -60,7 +60,7 @@ class Skill(models.Model):
 
     CATEGORY_CHOICES = [
         ('language', 'Programming Language'),
-        ('framework', 'Framework/Library'),
+        ('framework', 'Framework / Library'),
         ('tool', 'Tool/Platform'),
         ('soft', 'Soft Skill'),
     ]

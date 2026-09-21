@@ -130,14 +130,12 @@ class SkillForm(ModelForm):
             "name",
             "category",
             "level",
-            "icon",
         ]
 
         labels = {
             "name": "Nama Skill",
             "category": "Kategori",
             "level": "Level",
-            "icon": "URL Ikon",
         }
 
         widgets = {
@@ -149,9 +147,4 @@ class SkillForm(ModelForm):
             ),
             "category": Select(),
             "level": Select(),
-            "icon": URLInput(
-                attrs={
-                    "placeholder": "https://.../django-icon.png",
-                }
-            ),
         }

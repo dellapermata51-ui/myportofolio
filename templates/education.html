@@ -1,54 +1,86 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block meta %}
     <title>Education - {{ name }}</title>
 {% endblock meta %}
 {% block content %}
-
     <main>
-        <section class="page-section" id="education">
+        <section class="experience-section" id="education">
             <div class="container">
-                <p class="section-kicker" style="text-align:left;">Latar belakang pendidikan saya</p>
+                <p class="section-kicker">Latar belakang pendidikan saya</p>
                 <div class="project-header">
-                    <h1 class="section-title">Education</h1>
+                    <h1>Education</h1>
                     <a href="{% url 'main:create_education' %}" class="button project-add-button">
                         <span aria-hidden="true">+</span>
                         Tambah Pendidikan
                     </a>
                 </div>
 
-                <div class="gallery-grid">
+                <div class="experience-grid project-grid">
                     {% for education in education_list %}
-                        <article class="gallery-card">
-                            <div class="gallery-accent-bar accent-{{ education.accent }}"></div>
-                            <div class="gallery-caption">
-                                <p class="gallery-date">
-                                    {{ education.started_at|date:"M Y" }} &ndash;
-                                    {% if education.is_ongoing %}Sekarang{% else %}{{ education.ended_at|date:"M Y" }}{% endif %}
-                                </p>
-                                <h3>{{ education.institution }}</h3>
-                                {% if education.program %}
-                                    <p class="gallery-org">{{ education.program }}</p>
-                                {% endif %}
-                                <p class="gallery-category text-{{ education.accent }}">{{ education.get_level_display }}</p>
-                                {% if education.description %}
-                                    <p class="gallery-description">{{ education.description }}</p>
-                                {% endif %}
-                                {% if education.is_ongoing %}
-                                    <p class="gallery-status text-{{ education.accent }}">Sedang berlangsung</p>
-                                {% else %}
-                                    <p class="gallery-status text-{{ education.accent }}">Selesai</p>
-                                {% endif %}
+                        <article class="experience-card">
+                            {% if education.thumbnail %}
+                                <img src="{{ education.thumbnail }}"
+                                     alt="Logo {{ education.institution }}"
+                                     class="project-image">
+                            {% endif %}
+                            <h2>{{ education.institution }}</h2>
+                            <span class="experience-category">{{ education.get_level_display }}</span>
+                            {% if education.program %}
+                                <p class="experience-description">{{ education.program }}</p>
+                            {% endif %}
+                            {% if education.description %}
+                                <p class="experience-description">{{ education.description }}</p>
+                            {% endif %}
+                            <p class="gallery-date">
+                                {{ education.started_at|date:"M Y" }} &ndash;
+                                {% if education.is_ongoing %}Sekarang{% else %}{{ education.ended_at|date:"M Y" }}{% endif %}
+                            </p>
+                            {% if education.is_ongoing %}
+                                <p class="gallery-status">Sedang berlangsung</p>
+                            {% else %}
+                                <p class="gallery-status">Selesai</p>
+                            {% endif %}
 
-                                <div class="project-card-actions">
-                                    <div class="project-actions">
-                                        <a href="{% url 'main:update_education' education.id %}" class="button">Edit</a>
-                                        <form method="post"
-                                              action="{% url 'main:delete_education' education.id %}"
-                                              onsubmit="return confirm('Yakin ingin menghapus riwayat pendidikan ini?');"
-                                              style="display:inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="button button-secondary">Hapus</button>
-                                        </form>
+                            <div class="project-card-actions">
+                                <div class="project-actions">
+                                    <a href="{% url 'main:update_education' education.id %}" class="button">Edit</a>
+                                    <button type="button"
+                                            popovertarget="delete-education-modal-{{ education.id }}"
+                                            class="button button-danger">
+                                        Hapus
+                                    </button>
+
+                                    <div id="delete-education-modal-{{ education.id }}"
+                                         popover
+                                         class="project-delete-modal">
+                                        <button type="button"
+                                                popovertarget="delete-education-modal-{{ education.id }}"
+                                                popovertargetaction="hide"
+                                                class="project-delete-modal__backdrop"
+                                                aria-label="Tutup"></button>
+                                        <div class="project-delete-modal__content">
+                                            <button type="button"
+                                                    popovertarget="delete-education-modal-{{ education.id }}"
+                                                    popovertargetaction="hide"
+                                                    class="project-delete-modal__close"
+                                                    aria-label="Tutup">&times;</button>
+                                            <h2>Hapus Riwayat Pendidikan?</h2>
+                                            <p>
+                                                Yakin ingin menghapus riwayat pendidikan di
+                                                "{{ education.institution }}"? Tindakan ini tidak dapat dibatalkan.
+                                            </p>
+                                            <div class="project-delete-modal__actions">
+                                                <button type="button"
+                                                        popovertarget="delete-education-modal-{{ education.id }}"
+                                                        popovertargetaction="hide"
+                                                        class="button button-secondary">Batal</button>
+                                                <form method="post"
+                                                      action="{% url 'main:delete_education' education.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="button button-danger">Hapus</button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -60,5 +92,4 @@
             </div>
         </section>
     </main>
-
-    {% endblock content %}
+{% endblock content %}

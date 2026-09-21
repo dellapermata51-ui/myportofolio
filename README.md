@@ -42,3 +42,27 @@ Proyek ini merupakan pengembangan lanjutan dari website portofolio pribadi, yang
 "Tolong jelaskan alur yang terjadi ketika pengguna membuka halaman portofolio baru, mulai dari permintaan diterima proyek hingga data ditampilkan di browser."
 "Mengapa data untuk bagian portofolio sebaiknya disimpan di model dan tidak ditulis langsung di template? Jelaskan dampaknya terhadap pemeliharaan aplikasi."
 "Apa perbedaan fungsi makemigrations dan migrate pada Django? Berikan contoh perubahan model yang mengharuskan menjalankan kedua perintah tersebut."
+
+##################################################################################################################
+
+# Deskripsi Proyek
+Proyek ini merupakan pengembangan lanjutan dari website portofolio pribadi berbasis Django. Pada tugas ini, dilakukan refactoring pada template HTML dengan menerapkan konsep template inheritance menggunakan extends terhadap template utama, sehingga struktur HTML yang sama dapat digunakan kembali secara lebih efisien. Selain itu, ditambahkan fitur pengelolaan data Education melalui ModelForm, yang memungkinkan pengguna untuk menambahkan, mengubah, dan menghapus data pendidikan secara dinamis. Data pendidikan disimpan dalam database melalui model Django, kemudian disajikan dalam format JSON melalui fungsi view dengan proses serialisasi. Data JSON tersebut selanjutnya diambil dan dideserialisasi untuk ditampilkan kembali pada halaman web. Dengan demikian, website portofolio tidak hanya menampilkan informasi secara dinamis, tetapi juga menyediakan fitur pengelolaan data pendidikan melalui form yang terintegrasi dengan database.
+
+# Pertanyaan Reflektif
+### Tugas 3
+1. ModelForm digunakan karena dapat membuat form dan validasi secara otomatis berdasarkan model yang ada di Django, sehingga kita tidak perlu menulis semua field dan validasi secara manual. ModelForm juga memudahkan penyimpanan data ke database menggunakan is_valid() dan save(). Sementara itu, {% csrf_token %} digunakan untuk melindungi form dari serangan CSRF, yaitu ketika pihak lain mencoba mengirimkan data tanpa izin pengguna. Jika token tidak ada atau tidak valid, Django akan menolak request tersebut.
+
+2. JSON lebih banyak digunakan dalam pengembangan web modern karena formatnya lebih sederhana, ringkas, dan mudah dibaca dibandingkan XML. JSON juga mudah diproses oleh JavaScript dan dapat digunakan untuk pertukaran data antara backend dan frontend, sehingga cocok untuk pengembangan aplikasi web maupun mobile.
+
+3. Alurnya dimulai ketika browser mengirim request ke endpoint JSON. View kemudian mengambil data portofolio dari model Django, misalnya Education.objects.all(). Data tersebut perlu di-serialize agar objek model Django dapat diubah menjadi format JSON yang bisa dikirim melalui HTTP dan dibaca oleh client. Setelah itu, JSON dikembalikan melalui HttpResponse dengan content_type="application/json".
+
+# AI Diclosure
+- Dalam pengerjaan tugas ini, saya menggunakan Claude sebagai alat bantu selama proses pengembangan proyek. AI digunakan sebagai pendamping ketika saya mengalami kesulitan dalam memahami dan menerapkan konsep yang dibahas pada Tutorial 03, khususnya penggunaan `ModelForm`, template inheritance dengan `extends`, serta proses penyajian data dalam format JSON dan deserialisasi data pada Django.
+- Penggunaan AI tidak ditujukan untuk membuat keseluruhan proyek secara otomatis. Saya tetap mengerjakan dan mengembangkan kode secara mandiri, sementara Claude membantu memberikan penjelasan, saran perbaikan, dan alternatif solusi ketika saya mengalami kendala dalam mengimplementasikan fitur create, update, delete, dan JSON Data Delivery pada bagian Education.
+- Setelah memperoleh saran dari AI, saya tetap membaca, memahami, dan menyesuaikan hasilnya dengan kebutuhan proyek. Penyesuaian tersebut mencakup struktur `ModelForm`, fungsi view, penggunaan template utama, serta tampilan form dan halaman Education agar tetap sesuai dengan desain portofolio yang telah saya buat sebelumnya.
+- Saya menyadari bahwa saran dari AI tidak selalu tepat atau langsung sesuai dengan struktur proyek yang saya miliki. Oleh karena itu, setiap saran tetap saya verifikasi dengan mencoba kode secara langsung melalui terminal dan browser, memeriksa hasilnya, serta memperbaiki error yang ditemukan. Dengan demikian, AI berperan sebagai alat bantu belajar dan pemecahan masalah, bukan sebagai pengganti proses pengerjaan dan pemahaman saya terhadap proyek.
+- Prompt yang saya gunakan:
+"Jelaskan cara kerja ModelForm pada Django dan bagaimana cara menghubungkannya dengan model Education yang sudah ada di proyek portofolio saya. Saya ingin memahami alurnya sebelum mengimplementasikannya."
+"Saya ingin menambahkan fitur create, update, dan delete untuk data Education menggunakan Django. Bisa jelaskan alur dan langkah-langkah yang perlu saya pahami agar bisa mengimplementasikannya sendiri?"
+"Saya mengalami kendala saat mengimplementasikan form atau menampilkan data Education di proyek Django saya. Tolong bantu saya memahami kemungkinan penyebabnya dan berikan arahan untuk memperbaikinya tanpa langsung membuat seluruh kode proyek."
+
