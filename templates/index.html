@@ -6,7 +6,7 @@
             <div class="container">
                 <p class="hero-eyebrow">{{ study_program }} &middot; Universitas Indonesia</p>
                 <h1 class="hero-title">{{ name }}</h1>
-                <p class="hero-meta">NPM {{ npm }} &middot; S1 Sistem Informasi</p>
+                <p class="hero-meta">NPM {{ npm }} &middot; S1 Sistem Informasi &middot; Sesi Terakhir Login - {{ last_login }}</p>
             </div>
         </section>
 
@@ -43,6 +43,7 @@
                     <a href="{% url 'main:show_experience' %}" class="social-link">Lihat Experience</a>
                     <a href="{% url 'main:show_education' %}" class="social-link">Lihat Education</a>
                     <a href="{% url 'main:show_skills' %}" class="social-link">Lihat Skills</a>
+                    <a href="{% url 'main:show_projects' %}" class="social-link">Lihat Projects</a>
                 </div>
             </div>
         </section>

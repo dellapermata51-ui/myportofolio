@@ -65,4 +65,3 @@ Proyek ini merupakan pengembangan lanjutan dari website portofolio pribadi berba
 "Jelaskan cara kerja ModelForm pada Django dan bagaimana cara menghubungkannya dengan model Education yang sudah ada di proyek portofolio saya. Saya ingin memahami alurnya sebelum mengimplementasikannya."
 "Saya ingin menambahkan fitur create, update, dan delete untuk data Education menggunakan Django. Bisa jelaskan alur dan langkah-langkah yang perlu saya pahami agar bisa mengimplementasikannya sendiri?"
 "Saya mengalami kendala saat mengimplementasikan form atau menampilkan data Education di proyek Django saya. Tolong bantu saya memahami kemungkinan penyebabnya dan berikan arahan untuk memperbaikinya tanpa langsung membuat seluruh kode proyek."
-

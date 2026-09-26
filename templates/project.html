@@ -9,11 +9,13 @@
                 <p class="section-kicker">Karya yang saya bangun</p>
                 <div class="project-header">
                     <h1>Projects</h1>
+                    {% if user.is_superuser %}
                     <a href="{% url 'main:create_project' %}"
                        class="button project-add-button">
                         <span aria-hidden="true">+</span>
                         Tambah Proyek
                     </a>
+                    {% endif %}
                 </div>
                 <form method="get"
                       action="{% url 'main:show_projects' %}"
@@ -39,10 +41,50 @@
                             <p class="experience-description">{{ project.description }}</p>
                             <div class="project-card-actions">
                                 <div class="project-actions">
-                                    {% if project.project_url %}
-                                        <a href="{{ project.project_url }}" class="button">Lihat Project</a>
+                                    {% if user.is_superuser %}
+                                        <a href="{% url 'main:update_project' project.id %}" class="button">Edit</a>
                                     {% endif %}
-                                    {% include "components/project_delete_modal.html" with project=project %}
+                                    {% include "components/project_star.html" with project=project %}
+                                    {% if user.is_superuser %}
+                                        <button type="button"
+                                                popovertarget="delete-project-modal-{{ project.id }}"
+                                                class="button button-danger">
+                                            Hapus
+                                        </button>
+                                    {% endif %}
+                                </div>
+
+                                <div id="delete-project-modal-{{ project.id }}"
+                                     popover
+                                     class="project-delete-modal">
+                                    <button type="button"
+                                            popovertarget="delete-project-modal-{{ project.id }}"
+                                            popovertargetaction="hide"
+                                            class="project-delete-modal__backdrop"
+                                            aria-label="Tutup"></button>
+                                    <div class="project-delete-modal__content">
+                                        <button type="button"
+                                                popovertarget="delete-project-modal-{{ project.id }}"
+                                                popovertargetaction="hide"
+                                                class="project-delete-modal__close"
+                                                aria-label="Tutup">&times;</button>
+                                        <h2>Hapus Project?</h2>
+                                        <p>
+                                            Yakin ingin menghapus Project "{{ project.title }}"?
+                                            Tindakan ini tidak dapat dibatalkan.
+                                        </p>
+                                        <div class="project-delete-modal__actions">
+                                            <button type="button"
+                                                    popovertarget="delete-project-modal-{{ project.id }}"
+                                                    popovertargetaction="hide"
+                                                    class="button button-secondary">Batal</button>
+                                            <form method="post"
+                                                  action="{% url 'main:delete_project' project.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button button-danger">Hapus</button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </article>

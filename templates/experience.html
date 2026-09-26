@@ -1,18 +1,42 @@
-
-    {% extends 'base.html' %}
-    {% block content %}
+{% extends 'base.html' %}
+{% block content %}
 
     <main>
         <section class="page-section" id="experience">
             <div class="container">
                 <p class="section-kicker" style="text-align:left;">Pengalaman saya sejauh ini</p>
-                <h1 class="section-title">Experience</h1>
+                <div class="project-header">
+                    <h1 class="section-title">Experience</h1>
+                    {% if user.is_superuser %}
+                    <a href="{% url 'main:create_experience' %}" class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Pengalaman
+                    </a>
+                    {% endif %}
+                </div>
+
+                <form method="get"
+                      action="{% url 'main:show_experience' %}"
+                      class="project-search">
+                    <input type="search"
+                           name="title"
+                           value="{{ title_query }}"
+                           placeholder="Cari berdasarkan judul pengalaman"
+                           class="project-search__input"
+                           aria-label="Cari berdasarkan judul pengalaman">
+                    <button type="submit" class="button">Cari</button>
+                </form>
 
                 <div class="gallery-grid">
                     {% for experience in experience_list %}
                         <article class="gallery-card">
                             <div class="gallery-accent-bar accent-{{ experience.accent }}"></div>
                             <div class="gallery-caption">
+                                {% if experience.thumbnail %}
+                                    <img src="{{ experience.thumbnail }}"
+                                         alt="Logo {{ experience.organization|default:experience.title }}"
+                                         class="project-image">
+                                {% endif %}
                                 <p class="gallery-date">
                                     {{ experience.started_at|date:"M Y" }} &ndash;
                                     {% if experience.is_ongoing %}Sekarang{% else %}{{ experience.ended_at|date:"M Y" }}{% endif %}
@@ -28,10 +52,60 @@
                                 {% else %}
                                     <p class="gallery-status text-{{ experience.accent }}">Selesai</p>
                                 {% endif %}
+
+                                {% if user.is_superuser %}
+                                <div class="project-card-actions">
+                                    <div class="project-actions">
+                                        <a href="{% url 'main:update_experience' experience.id %}" class="button">Edit</a>
+                                        <button type="button"
+                                                popovertarget="delete-experience-modal-{{ experience.id }}"
+                                                class="button button-danger">
+                                            Hapus
+                                        </button>
+                                    </div>
+
+                                    <div id="delete-experience-modal-{{ experience.id }}"
+                                         popover
+                                         class="project-delete-modal">
+                                        <button type="button"
+                                                popovertarget="delete-experience-modal-{{ experience.id }}"
+                                                popovertargetaction="hide"
+                                                class="project-delete-modal__backdrop"
+                                                aria-label="Tutup"></button>
+                                        <div class="project-delete-modal__content">
+                                            <button type="button"
+                                                    popovertarget="delete-experience-modal-{{ experience.id }}"
+                                                    popovertargetaction="hide"
+                                                    class="project-delete-modal__close"
+                                                    aria-label="Tutup">&times;</button>
+                                            <h2>Hapus Pengalaman?</h2>
+                                            <p>
+                                                Yakin ingin menghapus pengalaman "{{ experience.title }}"?
+                                                Tindakan ini tidak dapat dibatalkan.
+                                            </p>
+                                            <div class="project-delete-modal__actions">
+                                                <button type="button"
+                                                        popovertarget="delete-experience-modal-{{ experience.id }}"
+                                                        popovertargetaction="hide"
+                                                        class="button button-secondary">Batal</button>
+                                                <form method="post"
+                                                      action="{% url 'main:delete_experience' experience.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="button button-danger">Hapus</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </article>
                     {% empty %}
-                        <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
+                        {% if title_query %}
+                            <p class="empty-state">Tidak ada pengalaman dengan judul tersebut.</p>
+                        {% else %}
+                            <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>

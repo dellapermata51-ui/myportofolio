@@ -1,29 +1,32 @@
 {% extends "base.html" %}
 {% block meta %}
-    <title>{% if is_edit %}Edit Project{% else %}Add Project{% endif %} - {{ name }}</title>
+    <title>{% if is_edit %}Edit Pengalaman{% else %}Tambah Pengalaman{% endif %} - {{ name }}</title>
 {% endblock meta %}
 {% block content %}
     <main>
         <section class="experience-section">
             <div class="container">
-                <h1>{% if is_edit %}Edit Project{% else %}Add New Projects{% endif %}</h1>
+                <h1>{% if is_edit %}Edit Pengalaman{% else %}Tambah Pengalaman{% endif %}</h1>
                 <form method="post"
-                      action="{% if is_edit %}{% url 'main:update_project' project.id %}{% else %}{% url 'main:create_project' %}{% endif %}"
+                      action="{% if is_edit %}{% url 'main:update_experience' experience.id %}{% else %}{% url 'main:create_experience' %}{% endif %}"
                       class="project-form">
                     {% csrf_token %}
                     {% for field in form %}
                         <div class="form-group">
                             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
+                            {% if field.help_text %}
+                                <p class="form-help">{{ field.help_text }}</p>
+                            {% endif %}
                             {% for error in field.errors %}
                                 <p class="form-error">{{ error }}</p>
                             {% endfor %}
                         </div>
                     {% endfor %}
                     <button type="submit" class="button">
-                        {% if is_edit %}Simpan Perubahan{% else %}Tambah Project{% endif %}
+                        {% if is_edit %}Simpan Perubahan{% else %}Tambah Pengalaman{% endif %}
                     </button>
-                    <a href="{% url 'main:show_projects' %}" class="button button-secondary">Batal</a>
+                    <a href="{% url 'main:show_experience' %}" class="button button-secondary">Batal</a>
                 </form>
             </div>
         </section>

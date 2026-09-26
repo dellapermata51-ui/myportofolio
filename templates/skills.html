@@ -10,10 +10,12 @@
                 <p class="section-kicker">Apa yang saya kuasai</p>
                 <div class="project-header">
                     <h1>Skills</h1>
+                    {% if user.is_superuser %}
                     <a href="{% url 'main:create_skill' %}" class="button project-add-button">
                         <span aria-hidden="true">+</span>
                         Tambah Skill
                     </a>
+                    {% endif %}
                 </div>
 
                 <div class="experience-grid project-grid">
@@ -25,12 +27,14 @@
 
                             <div class="project-card-actions">
                                 <div class="project-actions">
+                                    {% if user.is_superuser %} 
                                     <a href="{% url 'main:update_skill' skill.id %}" class="button">Edit</a>
                                     <button type="button"
                                             popovertarget="delete-skill-modal-{{ skill.id }}"
                                             class="button button-danger">
                                         Hapus
                                     </button>
+                                    {% endif %}
 
                                     <div id="delete-skill-modal-{{ skill.id }}"
                                          popover

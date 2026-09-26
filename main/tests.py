@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -58,6 +59,14 @@ class MainTest(TestCase):
 class EducationPageTest(TestCase):
 
     def setUp(self):
+        # create_education, update_education, dan delete_education sekarang
+        # dilindungi @login_required + cek is_superuser, jadi client harus
+        # login sebagai superuser sebelum mengakses view-view tersebut.
+        self.superuser = User.objects.create_superuser(
+            username="admin_test", password="testpass123"
+        )
+        self.client.force_login(self.superuser)
+
         self.education = Education.objects.create(
             institution="Universitas Indonesia",
             program="Sistem Informasi",
@@ -143,6 +152,13 @@ class EducationPageTest(TestCase):
 class SkillPageTest(TestCase):
 
     def setUp(self):
+        # create_skill, update_skill, dan delete_skill sekarang dilindungi
+        # @login_required + cek is_superuser.
+        self.superuser = User.objects.create_superuser(
+            username="admin_test", password="testpass123"
+        )
+        self.client.force_login(self.superuser)
+
         self.skill = Skill.objects.create(
             name="Django",
             category="framework",
@@ -220,6 +236,13 @@ class SkillPageTest(TestCase):
 class ProjectPageTest(TestCase):
 
     def setUp(self):
+        # create_project dan delete_project sekarang dilindungi
+        # @login_required + cek is_superuser.
+        self.superuser = User.objects.create_superuser(
+            username="admin_test", password="testpass123"
+        )
+        self.client.force_login(self.superuser)
+
         self.project = Project.objects.create(
             title="Portfolio Website",
             description="Website portofolio pribadi yang dibangun dengan Django.",
@@ -274,3 +297,85 @@ class ProjectPageTest(TestCase):
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["model"], "main.project")
         self.assertEqual(data[0]["fields"]["title"], self.project.title)
+
+
+class AuthAndAuthorizationTest(TestCase):
+    """Test tambahan untuk memastikan Bagian 1-3 Tutorial 4 berjalan sesuai spesifikasi."""
+
+    def setUp(self):
+        self.project = Project.objects.create(
+            title="Project Uji Otorisasi",
+            description="Dipakai untuk menguji star dan pembatasan akses.",
+            tech_stack="Django",
+        )
+        self.regular_user = User.objects.create_user(
+            username="regular_test", password="testpass123"
+        )
+        self.superuser = User.objects.create_superuser(
+            username="admin_test2", password="testpass123"
+        )
+
+    def test_register_creates_new_account(self):
+        response = self.client.post(reverse("main:register"), {
+            "username": "new_user_test",
+            "password1": "SuperSecret123!",
+            "password2": "SuperSecret123!",
+        })
+        self.assertRedirects(response, reverse("main:login"))
+        self.assertTrue(User.objects.filter(username="new_user_test").exists())
+
+    def test_login_sets_last_login_cookie(self):
+        response = self.client.post(reverse("main:login"), {
+            "username": self.regular_user.username,
+            "password": "testpass123",
+        })
+        self.assertRedirects(response, reverse("main:show_main"))
+        self.assertIn("last_login", response.cookies)
+
+    def test_logout_deletes_last_login_cookie(self):
+        self.client.login(username=self.regular_user.username, password="testpass123")
+        response = self.client.get(reverse("main:logout"))
+        self.assertRedirects(response, reverse("main:show_main"))
+        # Cookie dihapus dengan mengeset expired, nilainya dikosongkan
+        self.assertEqual(response.cookies["last_login"].value, "")
+
+    def test_anonymous_user_redirected_to_login_for_create_project(self):
+        response = self.client.get(reverse("main:create_project"))
+        self.assertRedirects(
+            response,
+            f"{reverse('main:login')}?next={reverse('main:create_project')}",
+        )
+
+    def test_regular_user_forbidden_from_create_project(self):
+        self.client.login(username=self.regular_user.username, password="testpass123")
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_superuser_can_access_create_project(self):
+        self.client.login(username=self.superuser.username, password="testpass123")
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_anonymous_user_redirected_to_login_for_toggle_star(self):
+        response = self.client.post(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertRedirects(
+            response,
+            f"{reverse('main:login')}?next={reverse('main:toggle_star', args=[self.project.id])}",
+        )
+
+    def test_regular_user_can_toggle_star(self):
+        self.client.login(username=self.regular_user.username, password="testpass123")
+
+        response = self.client.post(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertIn(self.regular_user, self.project.starred_by.all())
+
+        # Toggle kedua kali membatalkan star
+        response = self.client.post(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertNotIn(self.regular_user, self.project.starred_by.all())

@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateTimeInput
 
-from main.models import Project, Education, Skill
+from main.models import Project, Education, Skill, Experience
 
 
 class ProjectForm(ModelForm):
@@ -147,4 +147,73 @@ class SkillForm(ModelForm):
             ),
             "category": Select(),
             "level": Select(),
+        }
+
+
+class ExperienceForm(ModelForm):
+    started_at = forms.DateTimeField(
+        label="Tanggal Mulai",
+        required=True,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+
+    ended_at = forms.DateTimeField(
+        label="Tanggal Selesai",
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+        help_text="Kosongkan jika pengalaman ini masih berlangsung.",
+    )
+
+    class Meta:
+        model = Experience
+        fields = [
+            "title",
+            "organization",
+            "category",
+            "description",
+            "thumbnail",
+            "started_at",
+            "ended_at",
+        ]
+
+        labels = {
+            "title": "Judul Pengalaman",
+            "organization": "Organisasi/Instansi",
+            "category": "Kategori",
+            "description": "Deskripsi",
+            "thumbnail": "URL Gambar/Logo",
+        }
+
+        widgets = {
+            "title": TextInput(
+                attrs={
+                    "placeholder": "Staff BEM Fasilkom UI",
+                    "maxlength": 255,
+                }
+            ),
+            "organization": TextInput(
+                attrs={
+                    "placeholder": "BEM Fasilkom UI",
+                }
+            ),
+            "category": Select(),
+            "description": Textarea(
+                attrs={
+                    "placeholder": "Ceritakan pengalamanmu",
+                    "rows": 3,
+                }
+            ),
+            "thumbnail": URLInput(
+                attrs={
+                    "placeholder": "https://.../logo-organisasi.png",
+                }
+            ),
         }
