@@ -792,16 +792,22 @@ h1, h2, h3, .brand, .hero-title {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    background: var(--ink);
+    background: #1f2430;
+    color: #ffffff;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.button-star:hover {
+    background: #2f3646;
 }
 
 .button-star.is-starred {
-    background: var(--accent);
+    background: #f5b700;
+    color: #1f2430;
+    border-color: #d99e00;
 }
 
-.star-count {
-    padding: 0.05rem 0.4rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.25);
-    font-size: 0.8rem;
+.button-star.is-starred:hover {
+    background: #ffc72c;
 }
