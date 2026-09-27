@@ -45,48 +45,52 @@
 
                             <div class="project-card-actions">
                                 <div class="project-actions">
-                                    {% if user.is_superuser %} 
+                                    {% if user.is_superuser or is_editor %}
                                     <a href="{% url 'main:update_education' education.id %}" class="button">Edit</a>
+                                    {% endif %}
+                                    {% if user.is_superuser %}
                                     <button type="button"
                                             popovertarget="delete-education-modal-{{ education.id }}"
                                             class="button button-danger">
                                         Hapus
                                     </button>
                                     {% endif %}
+                                </div>
 
-                                    <div id="delete-education-modal-{{ education.id }}"
-                                         popover
-                                         class="project-delete-modal">
+                                {% if user.is_superuser %}
+                                <div id="delete-education-modal-{{ education.id }}"
+                                     popover
+                                     class="project-delete-modal">
+                                    <button type="button"
+                                            popovertarget="delete-education-modal-{{ education.id }}"
+                                            popovertargetaction="hide"
+                                            class="project-delete-modal__backdrop"
+                                            aria-label="Tutup"></button>
+                                    <div class="project-delete-modal__content">
                                         <button type="button"
                                                 popovertarget="delete-education-modal-{{ education.id }}"
                                                 popovertargetaction="hide"
-                                                class="project-delete-modal__backdrop"
-                                                aria-label="Tutup"></button>
-                                        <div class="project-delete-modal__content">
+                                                class="project-delete-modal__close"
+                                                aria-label="Tutup">&times;</button>
+                                        <h2>Hapus Riwayat Pendidikan?</h2>
+                                        <p>
+                                            Yakin ingin menghapus riwayat pendidikan di
+                                            "{{ education.institution }}"? Tindakan ini tidak dapat dibatalkan.
+                                        </p>
+                                        <div class="project-delete-modal__actions">
                                             <button type="button"
                                                     popovertarget="delete-education-modal-{{ education.id }}"
                                                     popovertargetaction="hide"
-                                                    class="project-delete-modal__close"
-                                                    aria-label="Tutup">&times;</button>
-                                            <h2>Hapus Riwayat Pendidikan?</h2>
-                                            <p>
-                                                Yakin ingin menghapus riwayat pendidikan di
-                                                "{{ education.institution }}"? Tindakan ini tidak dapat dibatalkan.
-                                            </p>
-                                            <div class="project-delete-modal__actions">
-                                                <button type="button"
-                                                        popovertarget="delete-education-modal-{{ education.id }}"
-                                                        popovertargetaction="hide"
-                                                        class="button button-secondary">Batal</button>
-                                                <form method="post"
-                                                      action="{% url 'main:delete_education' education.id %}">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="button button-danger">Hapus</button>
-                                                </form>
-                                            </div>
+                                                    class="button button-secondary">Batal</button>
+                                            <form method="post"
+                                                  action="{% url 'main:delete_education' education.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button button-danger">Hapus</button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
+                                {% endif %}
                             </div>
                         </article>
                     {% empty %}

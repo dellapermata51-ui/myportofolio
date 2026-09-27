@@ -53,17 +53,20 @@
                                     <p class="gallery-status text-{{ experience.accent }}">Selesai</p>
                                 {% endif %}
 
-                                {% if user.is_superuser %}
+                                {% if user.is_superuser or is_editor %}
                                 <div class="project-card-actions">
                                     <div class="project-actions">
                                         <a href="{% url 'main:update_experience' experience.id %}" class="button">Edit</a>
+                                        {% if user.is_superuser %}
                                         <button type="button"
                                                 popovertarget="delete-experience-modal-{{ experience.id }}"
                                                 class="button button-danger">
                                             Hapus
                                         </button>
+                                        {% endif %}
                                     </div>
 
+                                    {% if user.is_superuser %}
                                     <div id="delete-experience-modal-{{ experience.id }}"
                                          popover
                                          class="project-delete-modal">
@@ -96,6 +99,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endif %}
                                 </div>
                                 {% endif %}
                             </div>

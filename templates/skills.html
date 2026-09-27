@@ -27,48 +27,52 @@
 
                             <div class="project-card-actions">
                                 <div class="project-actions">
-                                    {% if user.is_superuser %} 
+                                    {% if user.is_superuser or is_editor %}
                                     <a href="{% url 'main:update_skill' skill.id %}" class="button">Edit</a>
+                                    {% endif %}
+                                    {% if user.is_superuser %}
                                     <button type="button"
                                             popovertarget="delete-skill-modal-{{ skill.id }}"
                                             class="button button-danger">
                                         Hapus
                                     </button>
                                     {% endif %}
+                                </div>
 
-                                    <div id="delete-skill-modal-{{ skill.id }}"
-                                         popover
-                                         class="project-delete-modal">
+                                {% if user.is_superuser %}
+                                <div id="delete-skill-modal-{{ skill.id }}"
+                                     popover
+                                     class="project-delete-modal">
+                                    <button type="button"
+                                            popovertarget="delete-skill-modal-{{ skill.id }}"
+                                            popovertargetaction="hide"
+                                            class="project-delete-modal__backdrop"
+                                            aria-label="Tutup"></button>
+                                    <div class="project-delete-modal__content">
                                         <button type="button"
                                                 popovertarget="delete-skill-modal-{{ skill.id }}"
                                                 popovertargetaction="hide"
-                                                class="project-delete-modal__backdrop"
-                                                aria-label="Tutup"></button>
-                                        <div class="project-delete-modal__content">
+                                                class="project-delete-modal__close"
+                                                aria-label="Tutup">&times;</button>
+                                        <h2>Hapus Skill?</h2>
+                                        <p>
+                                            Yakin ingin menghapus skill "{{ skill.name }}"?
+                                            Tindakan ini tidak dapat dibatalkan.
+                                        </p>
+                                        <div class="project-delete-modal__actions">
                                             <button type="button"
                                                     popovertarget="delete-skill-modal-{{ skill.id }}"
                                                     popovertargetaction="hide"
-                                                    class="project-delete-modal__close"
-                                                    aria-label="Tutup">&times;</button>
-                                            <h2>Hapus Skill?</h2>
-                                            <p>
-                                                Yakin ingin menghapus skill "{{ skill.name }}"?
-                                                Tindakan ini tidak dapat dibatalkan.
-                                            </p>
-                                            <div class="project-delete-modal__actions">
-                                                <button type="button"
-                                                        popovertarget="delete-skill-modal-{{ skill.id }}"
-                                                        popovertargetaction="hide"
-                                                        class="button button-secondary">Batal</button>
-                                                <form method="post"
-                                                      action="{% url 'main:delete_skill' skill.id %}">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="button button-danger">Hapus</button>
-                                                </form>
-                                            </div>
+                                                    class="button button-secondary">Batal</button>
+                                            <form method="post"
+                                                  action="{% url 'main:delete_skill' skill.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button button-danger">Hapus</button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
+                                {% endif %}
                             </div>
                         </article>
                     {% empty %}

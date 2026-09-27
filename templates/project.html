@@ -41,7 +41,7 @@
                             <p class="experience-description">{{ project.description }}</p>
                             <div class="project-card-actions">
                                 <div class="project-actions">
-                                    {% if user.is_superuser %}
+                                    {% if user.is_superuser or is_editor %}
                                         <a href="{% url 'main:update_project' project.id %}" class="button">Edit</a>
                                     {% endif %}
                                     {% include "components/project_star.html" with project=project %}
