@@ -14,6 +14,15 @@ from django.core.exceptions import PermissionDenied
 PORTFOLIO_OWNER_NAME = "Della Permata Prasilda"
 
 
+def is_editor(user):
+    """
+    True jika user sudah login dan tergabung dalam Django Group 'Editor'.
+    Peran Editor: boleh mengubah (update) data portofolio, tapi TIDAK
+    boleh membuat (create) atau menghapus (delete) data.
+    """
+    return user.is_authenticated and user.groups.filter(name="Editor").exists()
+
+
 def show_main(request):
     experience_list = Experience.objects.all()
     last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
@@ -43,12 +52,14 @@ def show_experience(request):
         "name": PORTFOLIO_OWNER_NAME,
         "experience_list": experience_list,
         "title_query": title_query,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "experience.html", context)
 
 
 @login_required(login_url="/login/")
 def create_experience(request):
+    # Hanya pemilik portofolio (superuser) yang boleh membuat data baru.
     if not request.user.is_superuser:
         raise PermissionDenied
     form = ExperienceForm(request.POST or None)
@@ -67,7 +78,8 @@ def create_experience(request):
 
 @login_required(login_url="/login/")
 def update_experience(request, experience_id):
-    if not request.user.is_superuser:
+    # Pemilik (superuser) ATAU Editor boleh mengubah data yang sudah ada.
+    if not (request.user.is_superuser or is_editor(request.user)):
         raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)
@@ -88,6 +100,8 @@ def update_experience(request, experience_id):
 
 @login_required(login_url="/login/")
 def delete_experience(request, experience_id):
+    # Hanya pemilik portofolio (superuser) yang boleh menghapus data.
+    # Editor TIDAK diberi hak hapus, sesuai spesifikasi tugas.
     if not request.user.is_superuser:
         raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
@@ -119,7 +133,7 @@ def create_project(request):
 
 @login_required(login_url="/login/")
 def update_project(request, project_id):
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or is_editor(request.user)):
         raise PermissionDenied
     project = get_object_or_404(Project, pk=project_id)
     form = ProjectForm(request.POST or None, instance=project)
@@ -163,6 +177,7 @@ def show_projects(request):
         "name": PORTFOLIO_OWNER_NAME,
         "project_list": projects,
         "title_query": title_query,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "project.html", context)
 
@@ -204,8 +219,10 @@ def show_education(request):
     context = {
         "name": PORTFOLIO_OWNER_NAME,
         "education_list": education_list,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "education.html", context)
+
 
 @login_required(login_url="/login/")
 def create_education(request):
@@ -227,7 +244,7 @@ def create_education(request):
 
 @login_required(login_url="/login/")
 def update_education(request, education_id):
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or is_editor(request.user)):
         raise PermissionDenied
     education = get_object_or_404(Education, pk=education_id)
     form = EducationForm(request.POST or None, instance=education)
@@ -283,8 +300,10 @@ def show_skills(request):
     context = {
         "name": PORTFOLIO_OWNER_NAME,
         "skill_list": skill_list,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "skills.html", context)
+
 
 @login_required(login_url="/login/")
 def create_skill(request):
@@ -306,7 +325,7 @@ def create_skill(request):
 
 @login_required(login_url="/login/")
 def update_skill(request, skill_id):
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or is_editor(request.user)):
         raise PermissionDenied
     skill = get_object_or_404(Skill, pk=skill_id)
     form = SkillForm(request.POST or None, instance=skill)
