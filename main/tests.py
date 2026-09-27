@@ -1,6 +1,6 @@
 import json
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -59,9 +59,6 @@ class MainTest(TestCase):
 class EducationPageTest(TestCase):
 
     def setUp(self):
-        # create_education, update_education, dan delete_education sekarang
-        # dilindungi @login_required + cek is_superuser, jadi client harus
-        # login sebagai superuser sebelum mengakses view-view tersebut.
         self.superuser = User.objects.create_superuser(
             username="admin_test", password="testpass123"
         )
@@ -152,8 +149,6 @@ class EducationPageTest(TestCase):
 class SkillPageTest(TestCase):
 
     def setUp(self):
-        # create_skill, update_skill, dan delete_skill sekarang dilindungi
-        # @login_required + cek is_superuser.
         self.superuser = User.objects.create_superuser(
             username="admin_test", password="testpass123"
         )
@@ -236,8 +231,6 @@ class SkillPageTest(TestCase):
 class ProjectPageTest(TestCase):
 
     def setUp(self):
-        # create_project dan delete_project sekarang dilindungi
-        # @login_required + cek is_superuser.
         self.superuser = User.objects.create_superuser(
             username="admin_test", password="testpass123"
         )
@@ -300,7 +293,13 @@ class ProjectPageTest(TestCase):
 
 
 class AuthAndAuthorizationTest(TestCase):
-    """Test tambahan untuk memastikan Bagian 1-3 Tutorial 4 berjalan sesuai spesifikasi."""
+    """
+    Tes tambahan untuk memastikan 4 peran (Pengunjung, Pengguna biasa,
+    Editor, Pemilik/superuser) berperilaku sesuai spesifikasi Individual
+    Assignment 4. Pola yang diuji di sini pada model Project berlaku
+    identik untuk Experience, Education, dan Skill karena logika
+    is_editor()/is_superuser di views.py sama untuk keempatnya.
+    """
 
     def setUp(self):
         self.project = Project.objects.create(
@@ -314,6 +313,14 @@ class AuthAndAuthorizationTest(TestCase):
         self.superuser = User.objects.create_superuser(
             username="admin_test2", password="testpass123"
         )
+
+        editor_group, _ = Group.objects.get_or_create(name="Editor")
+        self.editor_user = User.objects.create_user(
+            username="editor_test", password="testpass123"
+        )
+        self.editor_user.groups.add(editor_group)
+
+    # --- Autentikasi & cookie (Tutorial 4, tetap divalidasi di sini) ---
 
     def test_register_creates_new_account(self):
         response = self.client.post(reverse("main:register"), {
@@ -336,8 +343,9 @@ class AuthAndAuthorizationTest(TestCase):
         self.client.login(username=self.regular_user.username, password="testpass123")
         response = self.client.get(reverse("main:logout"))
         self.assertRedirects(response, reverse("main:show_main"))
-        # Cookie dihapus dengan mengeset expired, nilainya dikosongkan
         self.assertEqual(response.cookies["last_login"].value, "")
+
+    # --- Pengunjung tanpa login (Anonymous) ---
 
     def test_anonymous_user_redirected_to_login_for_create_project(self):
         response = self.client.get(reverse("main:create_project"))
@@ -346,15 +354,12 @@ class AuthAndAuthorizationTest(TestCase):
             f"{reverse('main:login')}?next={reverse('main:create_project')}",
         )
 
-    def test_regular_user_forbidden_from_create_project(self):
-        self.client.login(username=self.regular_user.username, password="testpass123")
-        response = self.client.get(reverse("main:create_project"))
-        self.assertEqual(response.status_code, 403)
-
-    def test_superuser_can_access_create_project(self):
-        self.client.login(username=self.superuser.username, password="testpass123")
-        response = self.client.get(reverse("main:create_project"))
-        self.assertEqual(response.status_code, 200)
+    def test_anonymous_user_redirected_to_login_for_update_project(self):
+        response = self.client.get(reverse("main:update_project", args=[self.project.id]))
+        self.assertRedirects(
+            response,
+            f"{reverse('main:login')}?next={reverse('main:update_project', args=[self.project.id])}",
+        )
 
     def test_anonymous_user_redirected_to_login_for_toggle_star(self):
         response = self.client.post(
@@ -364,6 +369,8 @@ class AuthAndAuthorizationTest(TestCase):
             response,
             f"{reverse('main:login')}?next={reverse('main:toggle_star', args=[self.project.id])}",
         )
+
+    # --- Pengguna biasa: hanya boleh baca + star ---
 
     def test_regular_user_can_toggle_star(self):
         self.client.login(username=self.regular_user.username, password="testpass123")
@@ -379,3 +386,74 @@ class AuthAndAuthorizationTest(TestCase):
             reverse("main:toggle_star", args=[self.project.id])
         )
         self.assertNotIn(self.regular_user, self.project.starred_by.all())
+
+    def test_regular_user_forbidden_from_create_project(self):
+        self.client.login(username=self.regular_user.username, password="testpass123")
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_forbidden_from_update_project(self):
+        self.client.login(username=self.regular_user.username, password="testpass123")
+        response = self.client.get(reverse("main:update_project", args=[self.project.id]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_forbidden_from_delete_project(self):
+        self.client.login(username=self.regular_user.username, password="testpass123")
+        response = self.client.post(reverse("main:delete_project", args=[self.project.id]))
+        self.assertEqual(response.status_code, 403)
+
+    # --- Editor: boleh update, TIDAK boleh create/delete ---
+
+    def test_editor_can_access_update_project_page(self):
+        self.client.login(username=self.editor_user.username, password="testpass123")
+        response = self.client.get(reverse("main:update_project", args=[self.project.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_editor_can_update_project_via_post(self):
+        self.client.login(username=self.editor_user.username, password="testpass123")
+        response = self.client.post(reverse("main:update_project", args=[self.project.id]), {
+            "title": "Project Uji Otorisasi (Updated by Editor)",
+            "description": self.project.description,
+            "tech_stack": self.project.tech_stack,
+            "project_url": "",
+            "project_image_url": "",
+        })
+        self.project.refresh_from_db()
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertEqual(self.project.title, "Project Uji Otorisasi (Updated by Editor)")
+
+    def test_editor_forbidden_from_create_project(self):
+        self.client.login(username=self.editor_user.username, password="testpass123")
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_editor_forbidden_from_delete_project(self):
+        self.client.login(username=self.editor_user.username, password="testpass123")
+        response = self.client.post(reverse("main:delete_project", args=[self.project.id]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_editor_can_toggle_star(self):
+        self.client.login(username=self.editor_user.username, password="testpass123")
+        response = self.client.post(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertIn(self.editor_user, self.project.starred_by.all())
+
+    # --- Pemilik (superuser): boleh semua ---
+
+    def test_superuser_can_access_create_project(self):
+        self.client.login(username=self.superuser.username, password="testpass123")
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_superuser_can_access_update_project(self):
+        self.client.login(username=self.superuser.username, password="testpass123")
+        response = self.client.get(reverse("main:update_project", args=[self.project.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_superuser_can_delete_project(self):
+        self.client.login(username=self.superuser.username, password="testpass123")
+        response = self.client.post(reverse("main:delete_project", args=[self.project.id]))
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertFalse(Project.objects.filter(id=self.project.id).exists())
