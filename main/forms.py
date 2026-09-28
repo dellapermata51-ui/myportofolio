@@ -1,5 +1,7 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateTimeInput
+from django.utils.html import strip_tags
 
 from main.models import Project, Education, Skill, Experience
 
@@ -52,6 +54,26 @@ class ProjectForm(ModelForm):
                 }
             ),
         }
+
+    # Lapisan pertahanan kedua terhadap XSS: buang tag HTML saat data masuk.
+    # Pertahanan utama tetap escapeHtml() di sisi JavaScript saat menampilkan.
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+        return title
+
+    def clean_tech_stack(self):
+        tech_stack = strip_tags(self.cleaned_data["tech_stack"]).strip()
+        if not tech_stack:
+            raise ValidationError("Teknologi yang digunakan tidak boleh hanya berisi tag HTML.")
+        return tech_stack
+
+    def clean_description(self):
+        description = strip_tags(self.cleaned_data["description"]).strip()
+        if not description:
+            raise ValidationError("Deskripsi proyek tidak boleh hanya berisi tag HTML.")
+        return description
 
 
 class EducationForm(ModelForm):
