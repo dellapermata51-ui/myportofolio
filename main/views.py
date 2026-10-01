@@ -279,7 +279,7 @@ def get_education_json(request):
     return JsonResponse(data, safe=False)
 
 
-@ensure_csrf_cookie  # pastikan cookie csrftoken ada agar fetch() POST bisa mengirim X-CSRFToken
+@ensure_csrf_cookie  
 def show_education(request):
     """
     Hanya merender KERANGKA halaman. Data dimuat oleh JavaScript lewat
@@ -288,15 +288,13 @@ def show_education(request):
     context = {
         "name": PORTFOLIO_OWNER_NAME,
         "is_editor": is_editor(request.user),
-        "form": EducationForm(),  # dipakai modal tambah data (hanya dirender untuk superuser)
+        "form": EducationForm(),  
     }
     return render(request, "education.html", context)
 
 
 @require_POST
 def create_education_ajax(request):
-    # Hak akses diperiksa DI SINI (bukan hanya menyembunyikan tombol di template).
-    # Hanya superuser yang boleh menambah data; pengunjung & user biasa & Editor -> 403.
     if not request.user.is_superuser:
         return JsonResponse(
             {"message": "Hanya pemilik portofolio yang dapat menambahkan riwayat pendidikan."},
@@ -316,8 +314,6 @@ def create_education_ajax(request):
 
 @require_POST
 def toggle_education_star(request, education_id):
-    # Tidak memakai @login_required karena itu me-redirect (302) ke halaman login;
-    # untuk endpoint AJAX kita butuh respons JSON 403.
     if not request.user.is_authenticated:
         return JsonResponse({"message": "Login terlebih dahulu untuk memberi star."}, status=403)
 

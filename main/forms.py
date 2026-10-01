@@ -144,8 +144,6 @@ class EducationForm(ModelForm):
             ),
         }
 
-    # Lapisan pertahanan kedua terhadap XSS: buang tag HTML saat data masuk.
-    # Pertahanan utama tetap escapeHtml() di sisi JavaScript saat menampilkan.
     def clean_institution(self):
         institution = strip_tags(self.cleaned_data["institution"]).strip()
         if not institution:
