@@ -88,3 +88,17 @@ Fitur interaktif berupa pemberian star pada Project juga ditambahkan menggunakan
 "Saya mendapatkan IntegrityError saat menambahkan proyek baru di Django. Tolong bantu saya menelusuri penyebabnya berdasarkan riwayat migration yang saya miliki, tanpa langsung menghapus data saya."
 "Saya ingin menerapkan peran Editor menggunakan Django Group yang bisa mengubah data tapi tidak bisa membuat atau menghapus. Tolong jelaskan bagaimana cara memeriksa keanggotaan grup tersebut di view dan template Django saya."
 "Tolong periksa apakah implementasi autentikasi, session, dan cookie pada proyek saya sudah sesuai dengan modul Tutorial 04, dan jelaskan bagian mana saja yang masih perlu diperbaiki."
+
+
+
+# TUGAS 5
+## Deskripsi Proyek
+
+
+## Pertanyaan Reflektif
+### Tugas 5
+1. 
+2. 
+3. 
+
+## AI Disclosure

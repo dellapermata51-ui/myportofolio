@@ -1,7 +1,7 @@
 import json
 
 from django.contrib.auth.models import User, Group
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from main.models import Experience, Education, Skill, Project
@@ -78,7 +78,8 @@ class EducationPageTest(TestCase):
         self.assertTemplateUsed(response, "education.html")
 
     def test_education_data_appears_when_data_exists(self):
-        response = self.client.get(reverse("main:show_education"))
+        # Halaman hanya berisi kerangka; data dimuat lewat AJAX dari endpoint JSON.
+        response = self.client.get(reverse("main:get_education_json"))
         self.assertContains(response, self.education.institution)
         self.assertContains(response, self.education.program)
         self.assertContains(response, self.education.description)
@@ -248,7 +249,8 @@ class ProjectPageTest(TestCase):
         self.assertTemplateUsed(response, "project.html")
 
     def test_project_data_appears_when_data_exists(self):
-        response = self.client.get(reverse("main:show_projects"))
+        # Halaman Projects dimuat lewat AJAX, jadi cek endpoint JSON-nya.
+        response = self.client.get(reverse("main:get_projects_json"))
         self.assertContains(response, self.project.title)
         self.assertContains(response, self.project.tech_stack)
 
@@ -457,3 +459,92 @@ class AuthAndAuthorizationTest(TestCase):
         response = self.client.post(reverse("main:delete_project", args=[self.project.id]))
         self.assertRedirects(response, reverse("main:show_projects"))
         self.assertFalse(Project.objects.filter(id=self.project.id).exists())
+
+
+class EducationAjaxTest(TestCase):
+    """Tugas 5: AJAX list, pencarian, tambah via modal, hak akses, CSRF, XSS, star."""
+
+    VALID_DATA = {
+        "institution": "Institut Teknologi Bandung",
+        "program": "Teknik Informatika",
+        "level": "s1",
+        "description": "Pertukaran pelajar satu semester.",
+        "thumbnail": "",
+        "started_at": "2023-08-01T08:00",
+        "ended_at": "",
+    }
+
+    def setUp(self):
+        # Tanpa password agar test lebih cepat (login memakai force_login).
+        self.superuser = User.objects.create_superuser(username="admin_t5")
+        self.regular = User.objects.create_user(username="biasa_t5")
+        self.editor = User.objects.create_user(username="editor_t5")
+        editor_group, _ = Group.objects.get_or_create(name="Editor")
+        self.editor.groups.add(editor_group)
+
+        self.education = Education.objects.create(
+            institution="Universitas Indonesia",
+            program="Sistem Informasi",
+            description="S1 di Fasilkom.",
+            started_at=timezone.now(),
+        )
+        self.add_url = reverse("main:create_education_ajax")
+
+    def test_page_renders_skeleton_without_data(self):
+        response = self.client.get(reverse("main:show_education"))
+        self.assertEqual(response.status_code, 200)
+        for element_id in ('id="loading"', 'id="error"', 'id="empty"', 'id="grid"'):
+            self.assertContains(response, element_id)
+        self.assertNotContains(response, "S1 di Fasilkom.")  # data dimuat lewat AJAX
+
+    def test_search_filters_json_by_institution(self):
+        url = reverse("main:get_education_json")
+        self.assertEqual(len(json.loads(self.client.get(url, {"q": "indonesia"}).content)), 1)
+        self.assertEqual(json.loads(self.client.get(url, {"q": "tidak-ada"}).content), [])
+
+    def test_superuser_can_create_returns_201(self):
+        self.client.force_login(self.superuser)
+        response = self.client.post(self.add_url, self.VALID_DATA)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Education.objects.filter(institution="Institut Teknologi Bandung").exists())
+
+    def test_invalid_input_returns_400(self):
+        self.client.force_login(self.superuser)
+        response = self.client.post(self.add_url, {**self.VALID_DATA, "institution": ""})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("institution", response.json()["errors"])
+
+    def test_non_superuser_returns_403(self):
+        # pengunjung (anonim) lalu user biasa dan Editor
+        self.assertEqual(self.client.post(self.add_url, self.VALID_DATA).status_code, 403)
+        for user in (self.regular, self.editor):
+            self.client.force_login(user)
+            self.assertEqual(self.client.post(self.add_url, self.VALID_DATA).status_code, 403)
+        self.assertEqual(Education.objects.count(), 1)
+
+    def test_post_without_csrf_token_is_rejected(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.superuser)
+        self.assertEqual(client.post(self.add_url, self.VALID_DATA).status_code, 403)
+        self.assertEqual(Education.objects.count(), 1)
+
+    def test_html_is_rejected_or_stripped_on_server(self):
+        self.client.force_login(self.superuser)
+        # hanya berisi tag HTML -> kosong setelah strip_tags -> ditolak
+        payload = "<img src=\"x\" onerror=\"alert('XSS!')\">"
+        response = self.client.post(self.add_url, {**self.VALID_DATA, "institution": payload})
+        self.assertEqual(response.status_code, 400)
+        # campuran teks dan tag -> tag dibuang, teks disimpan
+        response = self.client.post(self.add_url, {**self.VALID_DATA, "program": "<b>Informatika</b>"})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Education.objects.get(pk=response.json()["pk"]).program, "Informatika")
+
+    def test_star_requires_login_and_toggles(self):
+        url = reverse("main:toggle_education_star", args=[self.education.id])
+        self.assertEqual(self.client.post(url).status_code, 403)  # pengunjung ditolak
+
+        self.client.force_login(self.regular)
+        fields = self.client.post(url).json()["fields"]
+        self.assertEqual((fields["star_count"], fields["is_starred"]), (1, True))
+        fields = self.client.post(url).json()["fields"]
+        self.assertEqual((fields["star_count"], fields["is_starred"]), (0, False))
