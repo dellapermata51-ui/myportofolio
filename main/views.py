@@ -11,7 +11,11 @@ import datetime
 from django.contrib.auth.decorators import login_required  
 from django.core.exceptions import PermissionDenied       
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db.models import Q
+from django.utils import timezone
+from django.utils.formats import date_format
 
 PORTFOLIO_OWNER_NAME = "Della Permata Prasilda"
 
@@ -183,6 +187,7 @@ def get_projects_json(request):
         starred_by_names = ", ".join([u.username for u in starred_users])
 
         data.append({
+            "model": "main.project",
             "pk": str(project.id),
             "fields": {
                 "title": project.title,
@@ -224,33 +229,106 @@ def delete_project(request, project_id):
 
     return redirect("main:show_projects")
 
+def _format_education_period(education):
+    """Contoh: 'Sep 2023 – Sekarang' (sama dengan format di template lama)."""
+    started = date_format(timezone.localtime(education.started_at), "M Y")
+    if education.is_ongoing:
+        ended = "Sekarang"
+    else:
+        ended = date_format(timezone.localtime(education.ended_at), "M Y")
+    return f"{started} \u2013 {ended}"
+
+
+def _serialize_education(education, user):
+    """Menyusun satu item JSON secara manual, termasuk informasi star (Tugas 4)."""
+    starred_users = list(education.starred_by.all())  # memakai prefetch_related
+    return {
+        "model": "main.education",
+        "pk": str(education.id),
+        "fields": {
+            "institution": education.institution,
+            "program": education.program,
+            "level": education.level,
+            "level_display": education.get_level_display(),
+            "description": education.description,
+            "thumbnail": education.thumbnail or "",
+            "period": _format_education_period(education),
+            "is_ongoing": education.is_ongoing,
+            "star_count": len(starred_users),
+            "is_starred": user.is_authenticated and any(u.pk == user.pk for u in starred_users),
+            "starred_by_names": ", ".join(u.username for u in starred_users),
+        },
+    }
+
+
+@require_GET
 def get_education_json(request):
-    """Mengembalikan seluruh data Education dalam format JSON."""
-    education_list = Education.objects.all().order_by("-started_at")
-    education_json = serializers.serialize("json", education_list)
-    return HttpResponse(education_json, content_type="application/json")
+    """
+    Endpoint JSON publik (pengunjung yang belum login boleh membaca).
+    Parameter opsional ?q= mencari berdasarkan institusi atau program studi.
+    """
+    query = request.GET.get("q", "").strip()
+    education_list = Education.objects.prefetch_related("starred_by").order_by("-started_at")
+
+    if query:
+        education_list = education_list.filter(
+            Q(institution__icontains=query) | Q(program__icontains=query)
+        )
+
+    data = [_serialize_education(education, request.user) for education in education_list]
+    return JsonResponse(data, safe=False)
 
 
+@ensure_csrf_cookie  # pastikan cookie csrftoken ada agar fetch() POST bisa mengirim X-CSRFToken
 def show_education(request):
     """
-    Menampilkan halaman education. Data diambil melalui fungsi JSON di atas,
-    lalu di-deserialize kembali menjadi objek Education sebelum ditampilkan
-    ke template — meniru alur pengambilan data lewat "API" internal.
+    Hanya merender KERANGKA halaman. Data dimuat oleh JavaScript lewat
+    fetch() ke get_education_json.
     """
-    json_response = get_education_json(request)
-
-    deserialized_objects = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    education_list = [item.object for item in deserialized_objects]
-
     context = {
         "name": PORTFOLIO_OWNER_NAME,
-        "education_list": education_list,
         "is_editor": is_editor(request.user),
+        "form": EducationForm(),  # dipakai modal tambah data (hanya dirender untuk superuser)
     }
     return render(request, "education.html", context)
+
+
+@require_POST
+def create_education_ajax(request):
+    # Hak akses diperiksa DI SINI (bukan hanya menyembunyikan tombol di template).
+    # Hanya superuser yang boleh menambah data; pengunjung & user biasa & Editor -> 403.
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan riwayat pendidikan."},
+            status=403,
+        )
+
+    form = EducationForm(request.POST)
+    if form.is_valid():
+        education = form.save()
+        return JsonResponse(
+            {"message": "Riwayat pendidikan berhasil ditambahkan.", "pk": str(education.id)},
+            status=201,
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+
+@require_POST
+def toggle_education_star(request, education_id):
+    # Tidak memakai @login_required karena itu me-redirect (302) ke halaman login;
+    # untuk endpoint AJAX kita butuh respons JSON 403.
+    if not request.user.is_authenticated:
+        return JsonResponse({"message": "Login terlebih dahulu untuk memberi star."}, status=403)
+
+    education = get_object_or_404(Education, pk=education_id)
+    if education.starred_by.filter(pk=request.user.pk).exists():
+        education.starred_by.remove(request.user)
+    else:
+        education.starred_by.add(request.user)
+
+    education = Education.objects.prefetch_related("starred_by").get(pk=education_id)
+    return JsonResponse(_serialize_education(education, request.user))
 
 
 @login_required(login_url="/login/")
