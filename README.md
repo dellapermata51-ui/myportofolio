@@ -93,12 +93,32 @@ Fitur interaktif berupa pemberian star pada Project juga ditambahkan menggunakan
 
 # TUGAS 5
 ## Deskripsi Proyek
+Pada tugas ini, website portofolio dikembangkan dengan menambahkan interaktivitas JavaScript pada bagian **Education**, mengikuti pola halaman Projects pada Tutorial 05. Data Education tidak lagi langsung ditampilkan dari HTML, tetapi diambil menggunakan `fetch()` dari endpoint `/api/education/`. Fitur pencarian juga dilakukan secara AJAX dengan **debouncing 300 ms** dan `AbortController` agar request yang tidak diperlukan dapat dibatalkan.
+
+Form tambah Education dipindahkan ke dalam modal dan dikirim menggunakan Fetch API. Data divalidasi melalui `EducationForm`, dengan akses tambah data yang hanya diberikan kepada **superuser**. Sistem juga menggunakan CSRF token serta perlindungan XSS dengan `escapeHtml` dan `strip_tags`. Selain itu, fitur **star** pada Education menggunakan `ManyToManyField` untuk menyimpan pengguna yang memberikan star beserta jumlah star-nya.
+
+Endpoint yang digunakan:
+* `GET /api/education/?q=` untuk mengambil dan mencari data Education.
+* `POST /education/add-ajax/` untuk menambahkan data melalui AJAX.
+* `POST /education/<id>/star/` untuk memberi atau membatalkan star.
+
+Halaman Projects, Experience, dan Skills tidak diubah. Fitur edit dan hapus Education tetap menggunakan fitur yang sudah tersedia sebelumnya.
 
 
 ## Pertanyaan Reflektif
 ### Tugas 5
-1. 
-2. 
-3. 
+1. Debouncing. Debouncing adalah teknik untuk menunda fungsi sampai pengguna berhenti melakukan suatu aktivitas dalam waktu tertentu. Pada fitur pencarian AJAX, debouncing mencegah setiap ketikan mengirim request ke server. Pada proyek ini digunakan jeda **300 ms**, sehingga request hanya dikirim setelah pengguna berhenti mengetik. Saya juga menggunakan `AbortController` untuk membatalkan request lama yang sudah tidak diperlukan.
+
+2. `fetch()` dan `await`, `fetch()` mengembalikan **Promise**, sehingga data dari server belum langsung tersedia. `await` digunakan untuk menunggu Promise selesai sebelum kode dilanjutkan. Tanpa `await`, kode bisa berjalan sebelum data diterima dan menyebabkan hasil tidak sesuai. Penggunaan `await` juga memudahkan penanganan error dengan `try/catch`.
+
+3. XSS (Cross-Site Scripting), XSS adalah serangan ketika data yang dimasukkan pengguna mengandung skrip berbahaya dan kemudian dijalankan di browser. Pada template Django, data biasanya otomatis di-escape, tetapi pada AJAX kita membuat HTML sendiri menggunakan JavaScript sehingga perlu melakukan escaping secara manual. Pada proyek ini digunakan `escapeHtml` di sisi JavaScript dan `strip_tags` di sisi server sebagai perlindungan tambahan.
+
 
 ## AI Disclosure
+- Dalam pengerjaan tugas ini, saya menggunakan Claude sebagai alat bantu ketika mengalami kesulitan dalam memahami instruksi dan mencari solusi teknis. AI membantu memberikan arahan terkait implementasi fitur Education, AJAX, unit test, dan README. Saya tetap menyesuaikan seluruh saran dengan struktur kode proyek yang saya kerjakan.
+- Saya menggunakan AI secara bertahap berdasarkan checklist tugas, kemudian memeriksa, menyesuaikan, dan menguji hasilnya sendiri. Perubahan juga saya kerjakan dan commit secara bertahap agar proses pengerjaan tetap terdokumentasi di Git.
+- Beberapa saran awal AI tidak sesuai dengan struktur proyek saya. Setelah saya memberikan kode yang sebenarnya, saya menyesuaikan kembali bagian yang diperlukan. Saya juga memperbaiki error pada unit test, template, serta menyesuaikan test lama yang terdampak perubahan AJAX.
+- Prompt yang saya gunakan:
+“Saya sedang membuat fitur Education menggunakan fetch() dan JsonResponse. Bisa jelaskan bagaimana alur data dari Django ke JavaScript, dan bantu cek kenapa data yang saya terima belum tampil sesuai yang diharapkan?”
+“Saya ingin membuat fitur pencarian AJAX dengan debouncing dan AbortController. Bisa jelaskan cara kerjanya dan bantu cek bagian kode ini jika request atau hasil pencariannya masih error?”
+“Saya sudah menggunakan innerHTML untuk menampilkan data dari API. Bisa jelaskan risiko XSS pada kode ini dan bagaimana cara menggunakan escapeHtml atau strip_tags dengan benar?”
