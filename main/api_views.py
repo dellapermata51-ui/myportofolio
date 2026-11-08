@@ -74,23 +74,23 @@ def project_star(request, project_id):
 
 
 
-# Education (bagian pilihan tugas) - peran Editor boleh PUT/PATCH.
+def _education_queryset():
+    return Education.objects.prefetch_related("starred_by")
+
 
 @api_view(["GET", "HEAD", "POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def education_list(request):
     if request.method in ("GET", "HEAD"):
-        education_list_qs = Education.objects.prefetch_related("starred_by").order_by(
-            "-started_at", "id",
-        )
+        education_qs = _education_queryset().order_by("-started_at", "id")
         query = request.query_params.get("q", "").strip()
         if query:
-            education_list_qs = education_list_qs.filter(
+            education_qs = education_qs.filter(
                 Q(institution__icontains=query) | Q(program__icontains=query)
             )
         serializer = EducationSerializer(
-            education_list_qs, many=True, context={"request": request},
+            education_qs, many=True, context={"request": request},
         )
         return Response(serializer.data)
 
@@ -104,9 +104,7 @@ def education_list(request):
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def education_detail(request, education_id):
-    education = get_object_or_404(
-        Education.objects.prefetch_related("starred_by"), pk=education_id,
-    )
+    education = get_object_or_404(_education_queryset(), pk=education_id)
     if request.method in ("GET", "HEAD"):
         serializer = EducationSerializer(education, context={"request": request})
         return Response(serializer.data)
