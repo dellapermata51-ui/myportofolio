@@ -54,15 +54,17 @@
     {% if user.is_superuser %}
         {% include "components/education_form_modal.html" %}
     {% endif %}
+    {% if user.is_superuser or is_editor %}
+        {% include "components/education_edit_modal.html" %}
+    {% endif %}
 
     <script>
         window.EDU_CONFIG = {
-            listUrl: "{% url 'main:get_education_json' %}",
-            createUrl: "{% url 'main:create_education_ajax' %}",
-            editUrlTemplate: "{% url 'main:update_education' '00000000-0000-0000-0000-000000000000' %}",
-            deleteUrlTemplate: "{% url 'main:delete_education' '00000000-0000-0000-0000-000000000000' %}",
-            starUrlTemplate: "{% url 'main:toggle_education_star' '00000000-0000-0000-0000-000000000000' %}",
+            listUrl: "{% url 'api:education-list' %}",
+            detailUrlTemplate: "{% url 'api:education-detail' '00000000-0000-0000-0000-000000000000' %}",
+            starUrlTemplate: "{% url 'api:education-star' '00000000-0000-0000-0000-000000000000' %}",
             dummyId: '00000000-0000-0000-0000-000000000000',
+            isAuthenticated: "{{ user.is_authenticated|yesno:'true,false' }}" === "true",
             isSuperuser: "{{ user.is_superuser|yesno:'true,false' }}" === "true",
             isEditor: "{{ is_editor|yesno:'true,false' }}" === "true",
         };

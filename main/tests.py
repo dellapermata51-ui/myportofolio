@@ -78,8 +78,8 @@ class EducationPageTest(TestCase):
         self.assertTemplateUsed(response, "education.html")
 
     def test_education_data_appears_when_data_exists(self):
-        # Halaman hanya berisi kerangka; data dimuat lewat AJAX dari endpoint JSON.
-        response = self.client.get(reverse("main:get_education_json"))
+        # Halaman hanya berisi kerangka; data dimuat lewat fetch() dari REST API.
+        response = self.client.get(reverse("api:education-list"))
         self.assertContains(response, self.education.institution)
         self.assertContains(response, self.education.program)
         self.assertContains(response, self.education.description)
@@ -136,15 +136,15 @@ class EducationPageTest(TestCase):
         self.assertRedirects(response, reverse("main:show_education"))
         self.assertFalse(Education.objects.filter(id=self.education.id).exists())
 
-    def test_education_json_endpoint_returns_valid_json(self):
-        response = self.client.get(reverse("main:get_education_json"))
+    def test_education_api_endpoint_returns_valid_json(self):
+        response = self.client.get(reverse("api:education-list"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["content-type"], "application/json")
 
         data = json.loads(response.content)
         self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]["model"], "main.education")
-        self.assertEqual(data[0]["fields"]["institution"], self.education.institution)
+        self.assertEqual(data[0]["id"], str(self.education.id))
+        self.assertEqual(data[0]["institution"], self.education.institution)
 
 
 class SkillPageTest(TestCase):
@@ -461,90 +461,51 @@ class AuthAndAuthorizationTest(TestCase):
         self.assertFalse(Project.objects.filter(id=self.project.id).exists())
 
 
-class EducationAjaxTest(TestCase):
-    """Tugas 5: AJAX list, pencarian, tambah via modal, hak akses, CSRF, XSS, star."""
-
-    VALID_DATA = {
-        "institution": "Institut Teknologi Bandung",
-        "program": "Teknik Informatika",
-        "level": "s1",
-        "description": "Pertukaran pelajar satu semester.",
-        "thumbnail": "",
-        "started_at": "2023-08-01T08:00",
-        "ended_at": "",
-    }
+class EducationPageSkeletonTest(TestCase):
+    """Tugas 6: halaman hanya berisi kerangka, aksi lewat REST API + CSRF cookie."""
 
     def setUp(self):
-        # Tanpa password agar test lebih cepat (login memakai force_login).
-        self.superuser = User.objects.create_superuser(username="admin_t5")
-        self.regular = User.objects.create_user(username="biasa_t5")
-        self.editor = User.objects.create_user(username="editor_t5")
+        self.superuser = User.objects.create_superuser(username="admin_t6")
+        self.regular = User.objects.create_user(username="biasa_t6")
+        self.editor = User.objects.create_user(username="editor_t6")
         editor_group, _ = Group.objects.get_or_create(name="Editor")
         self.editor.groups.add(editor_group)
 
-        self.education = Education.objects.create(
+        Education.objects.create(
             institution="Universitas Indonesia",
             program="Sistem Informasi",
             description="S1 di Fasilkom.",
             started_at=timezone.now(),
         )
-        self.add_url = reverse("main:create_education_ajax")
+        self.url = reverse("main:show_education")
 
     def test_page_renders_skeleton_without_data(self):
-        response = self.client.get(reverse("main:show_education"))
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         for element_id in ('id="loading"', 'id="error"', 'id="empty"', 'id="grid"'):
             self.assertContains(response, element_id)
-        self.assertNotContains(response, "S1 di Fasilkom.")  # data dimuat lewat AJAX
+        self.assertNotContains(response, "S1 di Fasilkom.")  # data dimuat lewat API
 
-    def test_search_filters_json_by_institution(self):
-        url = reverse("main:get_education_json")
-        self.assertEqual(len(json.loads(self.client.get(url, {"q": "indonesia"}).content)), 1)
-        self.assertEqual(json.loads(self.client.get(url, {"q": "tidak-ada"}).content), [])
+    def test_page_points_to_rest_api_urls(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, reverse("api:education-list"))
 
-    def test_superuser_can_create_returns_201(self):
-        self.client.force_login(self.superuser)
-        response = self.client.post(self.add_url, self.VALID_DATA)
-        self.assertEqual(response.status_code, 201)
-        self.assertTrue(Education.objects.filter(institution="Institut Teknologi Bandung").exists())
-
-    def test_invalid_input_returns_400(self):
-        self.client.force_login(self.superuser)
-        response = self.client.post(self.add_url, {**self.VALID_DATA, "institution": ""})
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("institution", response.json()["errors"])
-
-    def test_non_superuser_returns_403(self):
-        # pengunjung (anonim) lalu user biasa dan Editor
-        self.assertEqual(self.client.post(self.add_url, self.VALID_DATA).status_code, 403)
+    def test_csrf_cookie_is_set_for_regular_user_and_editor(self):
         for user in (self.regular, self.editor):
-            self.client.force_login(user)
-            self.assertEqual(self.client.post(self.add_url, self.VALID_DATA).status_code, 403)
-        self.assertEqual(Education.objects.count(), 1)
+            client = Client()
+            client.force_login(user)
+            response = client.get(self.url)
+            self.assertIn("csrftoken", response.cookies)
 
-    def test_post_without_csrf_token_is_rejected(self):
-        client = Client(enforce_csrf_checks=True)
-        client.force_login(self.superuser)
-        self.assertEqual(client.post(self.add_url, self.VALID_DATA).status_code, 403)
-        self.assertEqual(Education.objects.count(), 1)
-
-    def test_html_is_rejected_or_stripped_on_server(self):
-        self.client.force_login(self.superuser)
-        # hanya berisi tag HTML -> kosong setelah strip_tags -> ditolak
-        payload = "<img src=\"x\" onerror=\"alert('XSS!')\">"
-        response = self.client.post(self.add_url, {**self.VALID_DATA, "institution": payload})
-        self.assertEqual(response.status_code, 400)
-        # campuran teks dan tag -> tag dibuang, teks disimpan
-        response = self.client.post(self.add_url, {**self.VALID_DATA, "program": "<b>Informatika</b>"})
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(Education.objects.get(pk=response.json()["pk"]).program, "Informatika")
-
-    def test_star_requires_login_and_toggles(self):
-        url = reverse("main:toggle_education_star", args=[self.education.id])
-        self.assertEqual(self.client.post(url).status_code, 403)  # pengunjung ditolak
-
+    def test_edit_modal_only_for_editor_and_owner(self):
         self.client.force_login(self.regular)
-        fields = self.client.post(url).json()["fields"]
-        self.assertEqual((fields["star_count"], fields["is_starred"]), (1, True))
-        fields = self.client.post(url).json()["fields"]
-        self.assertEqual((fields["star_count"], fields["is_starred"]), (0, False))
+        self.assertNotContains(self.client.get(self.url), 'id="edit-education-modal"')
+        for user in (self.editor, self.superuser):
+            self.client.force_login(user)
+            self.assertContains(self.client.get(self.url), 'id="edit-education-modal"')
+
+    def test_add_modal_only_for_owner(self):
+        self.client.force_login(self.editor)
+        self.assertNotContains(self.client.get(self.url), 'id="add-education-modal"')
+        self.client.force_login(self.superuser)
+        self.assertContains(self.client.get(self.url), 'id="add-education-modal"')
