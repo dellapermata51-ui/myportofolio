@@ -122,3 +122,34 @@ Halaman Projects, Experience, dan Skills tidak diubah. Fitur edit dan hapus Educ
 “Saya sedang membuat fitur Education menggunakan fetch() dan JsonResponse. Bisa jelaskan bagaimana alur data dari Django ke JavaScript, dan bantu cek kenapa data yang saya terima belum tampil sesuai yang diharapkan?”
 “Saya ingin membuat fitur pencarian AJAX dengan debouncing dan AbortController. Bisa jelaskan cara kerjanya dan bantu cek bagian kode ini jika request atau hasil pencariannya masih error?”
 “Saya sudah menggunakan innerHTML untuk menampilkan data dari API. Bisa jelaskan risiko XSS pada kode ini dan bagaimana cara menggunakan escapeHtml atau strip_tags dengan benar?”
+
+
+# TUGAS 6
+## Deskripsi Proyek
+Pada Tugas 6, bagian **Education** dipindahkan ke **Django REST Framework** dengan pola yang sama seperti API Projects pada Tutorial 07. Data Education kini dikelola lewat `EducationSerializer` (field ditulis eksplisit, field star bersifat read-only, dan teks dibersihkan dengan `strip_tags`), permission `IsPortfolioOwnerOrEditorOrReadOnly`, serta API view berbasis fungsi dengan `SessionAuthentication`. Hak akses empat peran dari Tugas 4 tetap berlaku di API: pengunjung hanya bisa membaca, pengguna biasa bisa memberi star, Editor bisa mengubah data dengan `PUT` atau `PATCH`, dan pemilik portofolio (superuser) bisa menambah, mengubah, serta menghapus. Halaman Education menampilkan, mencari, menambah, mengubah (lewat modal edit), memberi star, dan menghapus data tanpa reload dengan `fetch()`. Setiap request yang mengubah data membawa header `X-CSRFToken`, dan pesan galat `400` serta `403` ditampilkan lewat toast. Endpoint lama Tugas 5 dihapus karena sudah digantikan API baru.
+
+Endpoint yang digunakan:
+* `GET` dan `POST /api/v1/education/` untuk daftar (pencarian lewat `?q=`) dan menambah data.
+* `GET`, `PUT`, `PATCH`, `DELETE /api/v1/education/<id>/` untuk detail, ubah, dan hapus.
+* `POST /api/v1/education/<id>/star/` untuk memberi atau membatalkan star.
+
+
+## Pertanyaan Reflektif
+### Tugas 6
+1. **REST** adalah gaya membangun API yang berpusat pada **resource**: setiap data punya URL sendiri, aksinya ditentukan oleh method HTTP (`GET` baca, `POST` tambah, `PUT`/`PATCH` ubah, `DELETE` hapus), dan hasilnya dilaporkan lewat status HTTP seperti `201`, `204`, `400`, `403`, atau `404`. Mengembalikan JSON saja belum cukup. Misalnya endpoint `POST /hapusEducation` yang selalu membalas `200` berisi JSON belum RESTful karena aksinya ditulis di URL dan status HTTP tidak dimanfaatkan. `PUT` mengganti **seluruh** data sehingga semua field harus dikirim, sedangkan `PATCH` hanya mengubah **sebagian** field. Contohnya, `PUT` cocok saat seluruh isi form dikirim ulang, dan `PATCH` cocok saat Editor hanya memperbaiki nama program studi. Modal edit di proyek ini memakai `PATCH`.
+
+2. **Serializer** adalah penerjemah antara objek model dan JSON. Ia mengubah data model menjadi JSON, lalu saat ada input ia memeriksa isinya (`validate_<field>`) sebelum disimpan. Dibandingkan menyusun `dictionary` manual dengan `JsonResponse` seperti di Tutorial 05, serializer lebih praktis karena aturan tampilan dan validasi cukup ditulis sekali lalu dipakai untuk daftar, detail, tambah, ubah, dan star. Selain itu, field yang tampil bisa ditentukan dengan jelas (email dan password tidak ikut bocor), field hasil perhitungan seperti `star_count` tidak bisa diubah dari luar, dan format galat `400` otomatis seragam. Kode view juga jadi lebih pendek.
+
+3. **Autentikasi** adalah proses mengetahui siapa penggunanya (di sini lewat cookie sesi), sedangkan **otorisasi** adalah menentukan apa yang boleh dilakukan pengguna tersebut (lewat *permission class*). Seseorang bisa sudah login tetapi tetap ditolak, misalnya pengguna biasa yang mencoba menghapus data akan mendapat `403`. Hak akses harus dicek di server karena menyembunyikan tombol di template hanya mengubah tampilan. Orang tetap bisa mengirim request sendiri lewat DevTools atau `curl` tanpa melihat tombolnya, jadi penjaga yang sebenarnya adalah permission class di server.
+
+4. Dengan `SessionAuthentication`, browser otomatis mengirim cookie sesi ke server kita, bahkan jika request dipicu oleh situs lain milik penyerang. Tanpa token CSRF, request palsu itu akan dianggap sah. Karena itu server meminta token di header `X-CSRFToken` yang hanya bisa dibaca oleh halaman kita sendiri. Test dengan `force_authenticate` tidak cukup karena langsung mengisi `request.user` dan melewati proses autentikasi beserta pemeriksaan CSRF, sehingga request tanpa token tetap lolos. Buktinya harus memakai `APIClient(enforce_csrf_checks=True)` dan `.login()`: tanpa token request ditolak `403`, dengan token request berhasil.
+
+
+## AI Disclosure
+- Dalam pengerjaan tugas ini, saya menggunakan Claude sebagai alat bantu untuk memahami instruksi Tugas 6 dan mencari solusi teknis. AI membantu memberikan arahan dan kode terkait Django REST Framework pada Education, penyesuaian halaman agar memakai API, unit test, dan README. Saya tetap menyesuaikan seluruh saran dengan struktur kode proyek yang saya kerjakan.
+- Saya menggunakan AI secara bertahap berdasarkan checklist tugas, kemudian memeriksa, menyesuaikan, dan menguji hasilnya sendiri. Perubahan juga saya kerjakan dan commit secara bertahap agar proses pengerjaan tetap terdokumentasi di Git.
+- AI tidak bisa menjalankan browser sungguhan, sehingga tampilan modal, toast, dan tombol pada halaman Education tetap saya cek sendiri di browser. Test lama dari Tugas 5 yang terdampak penghapusan endpoint lama juga disesuaikan agar memakai API baru.
+- Prompt yang saya gunakan:
+"Jelaskan dengan analogi sederhana kenapa API yang memakai SessionAuthentication tetap butuh token CSRF”
+“Kenapa force_authenticate tidak menguji CSRF? Jelaskan alurnya di DRF dari request masuk sampai enforce_csrf dipanggil”
+“Di permissions.py, urutan pengecekan di IsPortfolioOwnerOrEditorOrReadOnly itu berjalan bagaimana untuk tiap peran? Beri contoh request untuk masing-masing”
