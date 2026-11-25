@@ -10,7 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Muat variabel dari file .env (jika ada), mis. PRODUCTION=False untuk lokal.
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +31,11 @@ SECRET_KEY = 'django-insecure-m$6^bw5-@twt_dzj&qhcm!%b%*mfz2nerq-yhv(hvwr5q-avqi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['della-permata51-myportofolio.pws.cs.ui.ac.id', 'localhost', '127.0.0.1']
+# Flag lingkungan: set PRODUCTION=True di environment server deployment.
+PRODUCTION = os.getenv('PRODUCTION', 'False').lower() in ('true', '1', 'yes')
+
+# 10.0.2.2 = alamat mesin host yang dilihat dari emulator Android.
+ALLOWED_HOSTS = ['della-permata51-myportofolio.pws.cs.ui.ac.id', 'localhost', '127.0.0.1', '10.0.2.2']
 
 # Application definition
 
@@ -37,10 +47,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
+    'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
+    # CorsMiddleware harus berada sebelum CommonMiddleware (dan middleware lain yang membuat response).
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -133,3 +147,25 @@ MAILERS = {
 
 # gunakan https:// untuk trailing urlnya
 CSRF_TRUSTED_ORIGINS = ["https://della-permata51-myportofolio.pws.cs.ui.ac.id/"]
+
+# Django REST Framework: TokenAuthentication lebih dulu agar klien mobile memakai
+# header "Authorization: Token <key>" (dan mendapat 401 bila token hilang/tidak valid),
+# sedangkan halaman web tetap memakai SessionAuthentication.
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+
+# CORS untuk Flutter Web (Chrome) saat pengembangan lokal:
+# semua origin diizinkan bila PRODUCTION=False, dibatasi saat produksi.
+# Di produksi, isi CORS_ALLOWED_ORIGINS="https://your-web-app.example"
+# (hanya perlu jika Flutter Web di-host; aplikasi Android native tidak memakai CORS).
+CORS_ALLOW_ALL_ORIGINS = not PRODUCTION
+if PRODUCTION:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+        if origin.strip()
+    ]
